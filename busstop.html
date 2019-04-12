@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+   <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+   <title>Vue Lab</title>
+   <link
+     rel="stylesheet"    href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+     crossorigin="anonymous"
+   />
+ </head>
+
+ <body>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" 
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" 
+    crossorigin="anonymous"></script>
+ 
+    <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+    integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+    crossorigin="anonymous"
+  ></script>
+ 
+  <script
+    src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+    crossorigin="anonymous"
+  ></script>  
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+            
+            <div class="jumbotron">
+            <div class="container">
+            <center> <h1 class="display-4">Find Nearest Bus Stop</h1></center>
+            
+            <div id ="app">
+              <center><p style="font-size: 20pt">Number of stops:<p>
+              <input v-model.number = "numStops" type = "number" value="10" min="0"  ></center>
+            <div v-for = "stop in filteredStops" :key= "stop.id">
+            <center><div class="card">
+                <div class="card-body">
+                    <img src="/Kansas-Jayhawkhead-product-image_2048x.jpg" class="card-img-top" alt="..." style="hight:100px;width:100px;">
+                  <h5 class="card-title">Bus stop: {{stop.name}}</h5>
+                  <p class="card-text">Description: {{stop.description}}</p>
+                  <p class="card-text">Distance: {{stop.distance}}km</p></center>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div> 
+            
+             <script>
+                let stop = new Vue({
+                  el :'#app',
+                  data:{
+                    stops: [],
+                    numStops: 10,
+                    latitude: 0,
+                    longitude: 0
+                  },
+                  watch:{
+                    latitude: function() {this.allDistance()},
+                    longitude: function() {this.allDistance()}
+                  },
+                  mounted: function() {
+                          fetch('https://utils.pauliankline.com/stops.json')
+                          .then(function (response){
+                          return  response.json();
+                          })
+                          .then((response)=> {this.stops = response});
+                        
+                        if("geolocation" in navigator)
+                        {
+                          function geo_success(position) {
+                            this.latitude = position.coords.latitude;
+                            this.longitude = position.coords.longitude;
+                          }
+                          function geo_error()
+                          {
+                            alert("Sorry, no position available")
+                          }
+                          
+                          var geo_options = {
+                            enableHighAccuracy: true, 
+                            maximumAge        : 30000, 
+                            timeout           : 27000
+                          };
+
+        
+                          /*navigator.geolocation.watchPosition((position) =>{
+                            this.latitude = position.coords.latitude;
+                            this.longitude = position.coords.longitude;
+                            this.allDistance();
+                          }, geo_error, geo_options);*/
+                          navigator.geolocation.watchPosition(geo_success.bind(this), geo_error, geo_options);
+
+                        }
+                        else
+                        {
+                          alert("Geolocation is NOT available")
+                        }
+                  },
+
+                  computed: {
+                    filteredStops: function()
+                    {
+                      
+                      return(this.stops.slice(0,this.numStops));
+                    }
+                  },
+                  
+                  methods: {
+                    allDistance: function(){
+                        for(let i = 0; i < this.stops.length; i++)
+                        {
+                          this.stops[i].distance = this.getDistance(this.latitude, this.longitude, this.stops[i].lat, this.stops[i].lon); 
+                        }
+                        this.stops.sort(function(a, b){return a.distance - b.distance});
+                    },
+                    //codes from--https://www.geodatasource.com/developers/javascript
+                    getDistance: function(lat1, lon1, lat2, lon2)
+                    {
+                        if ((lat1 == lat2) && (lon1 == lon2)) {
+                        return 0;
+                        }
+                        else {
+                        var radlat1 = Math.PI * lat1/180;
+                        var radlat2 = Math.PI * lat2/180;
+                        var theta = lon1-lon2;
+                        var radtheta = Math.PI * theta/180;
+                        var dist = Math.sin(radlat1) * Math.sin(radlat2) + Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+                        if (dist > 1) {
+                        dist = 1;
+                        }
+                        dist = Math.acos(dist);
+                        dist = dist * 180/Math.PI;
+                        dist = dist * 60 * 1.1515;
+                        dist = dist * 1.609344;
+                        
+                        return dist;
+                        }
+                    }
+                    
+                  }
+                  
+                })
+              </script>
+
+</body>
+</html>
